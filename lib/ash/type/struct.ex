@@ -159,25 +159,29 @@ defmodule Ash.Type.Struct do
       if constraints[:instance_of] do
         nil_values = constraints[:store_nil_values?]
 
-        Enum.reduce_while(fields, {:ok, %{}}, fn {key, config}, {:ok, acc} ->
-          case Map.fetch(value, key) do
-            {:ok, value} ->
-              case Ash.Type.cast_stored(config[:type], value, config[:constraints] || []) do
-                {:ok, value} ->
-                  if is_nil(value) && !nil_values do
-                    {:cont, {:ok, acc}}
-                  else
-                    {:cont, {:ok, Map.put(acc, key, value)}}
-                  end
+        Enum.reduce_while(
+          fields,
+          {:ok, struct(constraints[:instance_of])},
+          fn {key, config}, {:ok, acc} ->
+            case fetch_field(value, key) do
+              {:ok, value} ->
+                case Ash.Type.cast_stored(config[:type], value, config[:constraints] || []) do
+                  {:ok, value} ->
+                    if is_nil(value) && !nil_values do
+                      {:cont, {:ok, acc}}
+                    else
+                      {:cont, {:ok, Map.put(acc, key, value)}}
+                    end
 
-                other ->
-                  {:halt, other}
-              end
+                  other ->
+                    {:halt, other}
+                end
 
-            :error ->
-              {:cont, {:ok, acc}}
+              :error ->
+                {:cont, {:ok, acc}}
+            end
           end
-        end)
+        )
       else
         :error
       end

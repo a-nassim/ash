@@ -129,7 +129,8 @@ defmodule Ash.Type.Map do
   @impl true
   def cast_stored(nil, _), do: {:ok, nil}
 
-  def cast_stored(value, _) when is_map(value), do: {:ok, value}
+  def cast_stored(value, constraints) when is_map(value),
+    do: apply_constraints(value, constraints)
 
   def cast_stored(_, _), do: :error
 
